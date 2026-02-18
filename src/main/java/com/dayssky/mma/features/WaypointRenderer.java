@@ -20,7 +20,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
-import java.util.List;
 import java.util.Objects;
 
 public class WaypointRenderer {
@@ -121,7 +120,7 @@ public class WaypointRenderer {
     }
 
     public void renderFilled(WorldRenderContext context) {
-        if (!getConfig().enable || !getConfig().filled) return;
+        if (!getConfig().enable || !getConfig().filledRenderer) return;
         var player = minecraft.player;
         if (player == null) return;
 
@@ -161,7 +160,7 @@ public class WaypointRenderer {
     }
 
     public void renderOutline(WorldRenderContext context) {
-        if (!getConfig().enable || !getConfig().outline) return;
+        if (!getConfig().enable || !getConfig().outlineRenderer) return;
         final var consumer = Objects.requireNonNull(context.consumers()).getBuffer(Graphics.OUTLINE_BOX);
         var player = minecraft.player;
         if (player == null) return;
@@ -185,11 +184,9 @@ public class WaypointRenderer {
     }
 
     public void renderLabels(WorldRenderContext context) {
-        if (!getConfig().enable || !getConfig().displayRouteNumberLabels) return;
+        if (!getConfig().enable || !getConfig().labelRenderer) return;
         var player = minecraft.player;
         if (player == null) return;
-        List<BlockPos> route = manager.getActiveRoutePositions();
-        if (route == null || route.isEmpty()) return;
 
         PoseStack poseStack = context.matrixStack();
         var buffers = context.consumers();
@@ -203,19 +200,7 @@ public class WaypointRenderer {
         for (WaypointEntry entry : manager.getEntries()) {
             BlockPos pos = entry.pos();
 
-            int index = -1;
-            for (int i = 0; i < route.size(); i++) {
-                BlockPos routePos = route.get(i);
-                if (routePos.getX() == pos.getX() &&
-                        routePos.getY() == pos.getY() &&
-                        routePos.getZ() == pos.getZ()) {
-                    index = i;
-                    break;
-                }
-            }
-            if (index == -1) continue;
-
-            String text = "#" + (index + 1);
+            String text = getConfig().labelText;
             float x = pos.getX() + 0.5f;
             float y = pos.getY() + getConfig().labelYOffset;
             float z = pos.getZ() + 0.5f;
@@ -244,7 +229,7 @@ public class WaypointRenderer {
 
             // Bottom‑left
             background.vertex(pose, bgX, bgY, 0)
-                    .color(0, 0, 0, bgAlpha)        // translucent black (alpha bgAlpha)
+                    .color(0, 0, 0, bgAlpha)
                     .uv(0, 0)
                     .uv2(light)
                     .normal(0, 0, 0)
@@ -274,12 +259,12 @@ public class WaypointRenderer {
             font.drawInBatch(
                     text,
                     xOffset, yOffset,
-                    0xFFFFFFFF,
+                    getConfig().labelTextColor,
                     false,
                     pose,
                     buffers,
                     Font.DisplayMode.SEE_THROUGH,
-                    0, // Using separately rendered background
+                    0,
                     light
             );
             poseStack.popPose();

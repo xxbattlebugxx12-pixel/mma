@@ -58,7 +58,7 @@ public class MMAConfig implements ConfigData {
 
     public static ConfigHolder<MMAConfig> register() {
         ConfigHolder<MMAConfig> holder = AutoConfig.register(
-                MMAConfig.class, (config, clazz) -> new GsonConfigSerializer(config, clazz, MMAConfigHandlerHelper.GSON)
+                MMAConfig.class, (config, clazz) -> new GsonConfigSerializer<>(config, clazz, MMAConfigHandlerHelper.GSON)
         );
         holder.registerSaveListener((configHolder, config) -> {
             config.validatePostLoad();
@@ -233,23 +233,21 @@ public class MMAConfig implements ConfigData {
         public boolean recordChests = true;
         public boolean disableInPlots = true;
         public boolean skipBrokenChests = false;
-        public boolean enableLootStateTracking = false;
         public List<String> disabledWorlds = new ArrayList<>(List.of("monumenta:zenith", "monumenta:depths", "monumenta:corridors"));
+
         // Rendering
-        public boolean onlyShowNextInRoute = false;
-        public boolean displayRouteNumberLabels = true;
+        public boolean labelRenderer = true;
+        public String labelText = "CHEST";
+        @ColorPicker public int labelTextColor = 0xFFAA00; // white
         public float labelYOffset = 0.6f;
-        public float filledAlpha = 0.75f;
-        public boolean filled = true;
-        public boolean outline = false;
+        public boolean filledRenderer = true;
+        public float filledAlpha = 0.35f;
         public boolean distanceFade = true;
-        public int radius = 128;
+        public boolean outlineRenderer = false;
+        public int radius = 64;
+
         // Colors
         @ColorPicker public int baseColor = 0xFFAA00;
-        @ColorPicker public int lootedStateColor = 0x808080;
-        @ColorPicker public int routeNextColor = 0x00FF00;
-        @ColorPicker public int routeLootedColor = 0x808080;
-        @ColorPicker public int routeUnlootedColor = 0xFFAA00;
     }
 
     @Retention(RetentionPolicy.RUNTIME)

@@ -30,8 +30,7 @@ public class Commands {
 
     public static void init() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            // ---------- MISC COMMANDS (Seperated, outside of /mma command) ----------
-            // /omw
+            // ---------- MISC COMMANDS ----------
             dispatcher.register(CommandUtil.lit("omw", context -> {
                 ChatUtil.sendCommand("lfg omw");
                 return 0;
@@ -40,13 +39,11 @@ public class Commands {
                 ChatUtil.sendCommand(String.format("lfg omw %s", arg));
                 return 0;
             })));
-            // /compass
             dispatcher.register(CommandUtil.lit("compass", context -> {
                 BlockPos pos = MMAClient.player().level().getSharedSpawnPos();
                 ChatUtil.send("Position: %s, %s, %s".formatted(pos.getX(), pos.getY(), pos.getZ()));
                 return 0;
             }));
-            // /timer
             dispatcher.register(CommandUtil.lit("timer", context -> {
                 if (timerMs == -1L) {
                     timerMs = Util.now();
@@ -58,7 +55,6 @@ public class Commands {
                 }
                 return 0;
             }));
-            // /lb (leaderboard)
             dispatcher.register(CommandUtil.lit("lb",
                     CommandUtil.arg(
                             "lb_name",
@@ -81,31 +77,18 @@ public class Commands {
                             )
                     )
             ));
+
             // ---------- Main /mma command ----------
             LiteralCommandNode<FabricClientCommandSource> mma = dispatcher.register(
                     CommandUtil.lit("mma",
-                            // Debug subcommands (only when debug enabled)
+                            // Debug subcommands
                             CommandUtil.<FabricClientCommandSource>litPred(
                                     "debug",
                                     ignored -> MMAClient.config().features.enableDebug,
-                                    CommandUtil.lit("test", ignored -> {
-                                        ChatUtil.send(":3");
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("re", ignored -> {
-                                        MMAClient.reload();
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("entity", ignored -> {
-                                        Debug.ENTITY_DEBUG = !Debug.ENTITY_DEBUG;
-                                        ChatUtil.send("Entity Debug: " + Debug.ENTITY_DEBUG);
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("block", ignored -> {
-                                        Debug.BLOCK_DEBUG = !Debug.BLOCK_DEBUG;
-                                        ChatUtil.send("Block Debug: " + Debug.ENTITY_DEBUG);
-                                        return 0;
-                                    }),
+                                    CommandUtil.lit("test", ignored -> { ChatUtil.send(":3"); return 0; }),
+                                    CommandUtil.lit("re", ignored -> { MMAClient.reload(); return 0; }),
+                                    CommandUtil.lit("entity", ignored -> { Debug.ENTITY_DEBUG = !Debug.ENTITY_DEBUG; ChatUtil.send("Entity Debug: " + Debug.ENTITY_DEBUG); return 0; }),
+                                    CommandUtil.lit("block", ignored -> { Debug.BLOCK_DEBUG = !Debug.BLOCK_DEBUG; ChatUtil.send("Block Debug: " + Debug.ENTITY_DEBUG); return 0; }),
                                     CommandUtil.lit("dumpentity", context -> {
                                         MMAClient.level().entitiesForRendering().forEach(e -> {
                                             if (e.getEyePosition().distanceTo(MMAClient.player().getEyePosition()) < 10.0) {
@@ -114,18 +97,13 @@ public class Commands {
                                         });
                                         return 0;
                                     }),
-                                    CommandUtil.lit(
-                                            "dumpnbt",
-                                            context -> {
-                                                ChatUtil.send(
-                                                        FormatUtil.join(
-                                                                Component.literal("Data: "),
-                                                                NbtUtils.toPrettyComponent(MMAClient.player().getItemInHand(InteractionHand.MAIN_HAND).getTag())
-                                                        )
-                                                );
-                                                return 0;
-                                            }
-                                    ),
+                                    CommandUtil.lit("dumpnbt", context -> {
+                                        ChatUtil.send(FormatUtil.join(
+                                                Component.literal("Data: "),
+                                                NbtUtils.toPrettyComponent(MMAClient.player().getItemInHand(InteractionHand.MAIN_HAND).getTag())
+                                        ));
+                                        return 0;
+                                    }),
                                     CommandUtil.lit("fakecrash", context -> {
                                         MMAClient.GLOBAL_SAFE_EH.onException(new Exception(), "test");
                                         return 0;
@@ -155,25 +133,9 @@ public class Commands {
                             }),
                             // ---------- WAYPOINT SYSTEM ----------
                             CommandUtil.lit("waypoint",
-                                    CommandUtil.lit("clearall", ctx -> {
-                                        MMAClient.WAYPOINT.clearCurrentWorld();
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("reload", ctx -> {
-                                        MMAClient.WAYPOINT.reloadCurrentWorld();
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("list", ctx -> {
-                                        MMAClient.WAYPOINT.listWaypointFiles();
-                                        return 0;
-                                    }),
-                                    CommandUtil.lit("resetlootstate", ctx -> {
-                                        var level = MMAClient.level();
-                                        if (level != null) {
-                                            MMAClient.WAYPOINT.resetLooted(level.dimension().location());
-                                        }
-                                        return 0;
-                                    }),
+                                    CommandUtil.lit("clearall", ctx -> { MMAClient.WAYPOINT.clearCurrentWorld(); return 0; }),
+                                    CommandUtil.lit("reload", ctx -> { MMAClient.WAYPOINT.reloadCurrentWorld(); return 0; }),
+                                    CommandUtil.lit("list", ctx -> { MMAClient.WAYPOINT.listWaypointFiles(); return 0; }),
                                     // File management
                                     CommandUtil.lit("create",
                                             CommandUtil.arg("filename", StringArgumentType.word(),
@@ -248,84 +210,6 @@ public class Commands {
                                                                     },
                                                                     (ctx, builder) -> SharedSuggestionProvider.suggest(new String[]{"replace", "skip"}, builder))
                                                     )
-                                            )
-                                    ),
-                                    // ---------- ROUTE SUBCOMMANDS ----------
-                                    CommandUtil.lit("route",
-                                            CommandUtil.lit("begintracking",
-                                                    CommandUtil.arg("name", StringArgumentType.word(),
-                                                            ctx -> {
-                                                                String name = StringArgumentType.getString(ctx, "name");
-                                                                MMAClient.WAYPOINT.startTrackingRoute(name);
-                                                                return 0;
-                                                            },
-                                                            (ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                                    MMAClient.WAYPOINT.listRoutes(), builder
-                                                            )
-                                                    )
-                                            ),
-                                            CommandUtil.lit("stoptracking",
-                                                    CommandUtil.arg("name", StringArgumentType.word(),
-                                                            ctx -> {
-                                                                String name = StringArgumentType.getString(ctx, "name");
-                                                                if (name.equals(MMAClient.WAYPOINT.getTrackingRouteName())) {
-                                                                    MMAClient.WAYPOINT.stopTrackingRoute(true);
-                                                                } else {
-                                                                    ChatUtil.send(Component.literal("Not currently tracking that route."));
-                                                                }
-                                                                return 0;
-                                                            },
-                                                            (ctx, builder) -> {
-                                                                String tracking = MMAClient.WAYPOINT.getTrackingRouteName();
-                                                                return SharedSuggestionProvider.suggest(
-                                                                        tracking != null ? new String[]{tracking} : new String[0],
-                                                                        builder
-                                                                );
-                                                            }
-                                                    )
-                                            ),
-                                            CommandUtil.lit("abort",
-                                                    ctx -> {
-                                                        MMAClient.WAYPOINT.abortTrackingRoute();
-                                                        return 0;
-                                                    }
-                                            ),
-                                            CommandUtil.lit("load",
-                                                    CommandUtil.arg("name", StringArgumentType.word(),
-                                                            ctx -> {
-                                                                String name = StringArgumentType.getString(ctx, "name");
-                                                                MMAClient.WAYPOINT.loadRoute(name);
-                                                                return 0;
-                                                            },
-                                                            (ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                                    MMAClient.WAYPOINT.listRoutes(), builder))
-                                            ),
-                                            CommandUtil.lit("unload",
-                                                    ctx -> {
-                                                        MMAClient.WAYPOINT.unloadRoute();
-                                                        return 0;
-                                                    }
-                                            ),
-                                            CommandUtil.lit("delete",
-                                                    CommandUtil.arg("name", StringArgumentType.word(),
-                                                            ctx -> {
-                                                                String name = StringArgumentType.getString(ctx, "name");
-                                                                MMAClient.WAYPOINT.deleteRoute(name);
-                                                                return 0;
-                                                            },
-                                                            (ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                                    MMAClient.WAYPOINT.listRoutes(), builder))
-                                            ),
-                                            CommandUtil.lit("list",
-                                                    ctx -> {
-                                                        List<String> routes = MMAClient.WAYPOINT.listRoutes();
-                                                        if (routes.isEmpty()) {
-                                                            ChatUtil.send(Component.literal("No routes found for this world."));
-                                                        } else {
-                                                            ChatUtil.send(Component.literal("Routes: " + String.join(", ", routes)));
-                                                        }
-                                                        return 0;
-                                                    }
                                             )
                                     )
                             ),
