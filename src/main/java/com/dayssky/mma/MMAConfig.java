@@ -1,5 +1,6 @@
 package com.dayssky.mma;
 
+import com.dayssky.mma.features.ViewModel;
 import com.dayssky.mma.features.cz.data.CharmEffectType;
 import com.dayssky.mma.features.cz.data.CharmType;
 
@@ -7,9 +8,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import me.shedaniel.autoconfig.AutoConfig;
@@ -52,13 +51,10 @@ public class MMAConfig implements ConfigData {
     @Category("zenith")
     @TransitiveObject
     public MMAConfig.Zenith zenith = new MMAConfig.Zenith();
-    @Category("waypoints")
-    @TransitiveObject
-    public MMAConfig.Waypoints waypoints = new MMAConfig.Waypoints();
 
     public static ConfigHolder<MMAConfig> register() {
         ConfigHolder<MMAConfig> holder = AutoConfig.register(
-                MMAConfig.class, (config, clazz) -> new GsonConfigSerializer<>(config, clazz, MMAConfigHandlerHelper.GSON)
+                MMAConfig.class, (config, clazz) -> new GsonConfigSerializer(config, clazz, MMAConfigHandlerHelper.GSON)
         );
         holder.registerSaveListener((configHolder, config) -> {
             config.validatePostLoad();
@@ -112,6 +108,8 @@ public class MMAConfig implements ConfigData {
         public boolean enableVanillaEffectInUMMHud = false;
         public boolean enableVanityDurability = true;
         public boolean enableCustomSplash = true;
+        @CollapsibleObject
+        public ViewModel.Config viewModel = new ViewModel.Config();
         @CollapsibleObject
         public MMAConfig.InventoryOverlayToggles inventoryOverlay = new MMAConfig.InventoryOverlayToggles();
         @CollapsibleObject
@@ -226,28 +224,6 @@ public class MMAConfig implements ConfigData {
         public boolean displayUUID = false;
         @ZenithAbilitySelection
         public Set<CharmEffectType> ignoredAbilities = new HashSet<>();
-    }
-
-    public static class Waypoints {
-        public boolean enable = false;
-        public boolean recordChests = true;
-        public boolean disableInPlots = true;
-        public boolean skipBrokenChests = false;
-        public List<String> disabledWorlds = new ArrayList<>(List.of("monumenta:zenith", "monumenta:depths", "monumenta:corridors"));
-
-        // Rendering
-        public boolean labelRenderer = true;
-        public String labelText = "CHEST";
-        @ColorPicker public int labelTextColor = 0xFFAA00; // white
-        public float labelYOffset = 0.6f;
-        public boolean filledRenderer = true;
-        public float filledAlpha = 0.35f;
-        public boolean distanceFade = true;
-        public boolean outlineRenderer = false;
-        public int radius = 64;
-
-        // Colors
-        @ColorPicker public int baseColor = 0xFFAA00;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
